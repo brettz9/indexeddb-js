@@ -1,3 +1,5 @@
+/*global console, define, require, module, jasmine, describe, it, expect, beforeEach*/
+/*jslint todo:true, vars:true*/
 // -*- coding: utf-8 -*-
 //-----------------------------------------------------------------------------
 // file: $Id$
@@ -8,18 +10,19 @@
 //-----------------------------------------------------------------------------
 
 // for node compatibility...
-if ( typeof(define) !== 'function' )
+if ( typeof(define) !== 'function' ) {
   var define = require('amdefine')(module);
+}
 
 define([
   'underscore',
   'sqlite3',
   '../src/indexeddb-js'
-], function(_, sqlite3, indexeddbjs) {
+], function(_, sqlite3, indexeddbjs) { 'use strict';
 
   describe('indexeddb-js', function() {
 
-    var j = function(o) { return JSON.stringify(o); };
+    // var j = function(o) { return JSON.stringify(o); };
     var testDbName = 'testdb';
 
     // none of these tests should take very long...
@@ -71,8 +74,9 @@ define([
           };
         },
         onsuccess: function(event) {
-          if ( upgraded )
+          if ( upgraded ) {
             return;
+          }
           var db = event.target.result;
           return cb(null, db, scope);
         }
@@ -101,8 +105,6 @@ define([
 
     //-------------------------------------------------------------------------
     it('creates new tables requested during "onupgradeneeded"', function(done) {
-      var upgraded = false;
-      var opened = false;
       var errorHandler = function(err) {
         expect('error callback call').toBe('never called');
         expect(err).not.toBeDefined();
@@ -135,8 +137,9 @@ define([
     var makeErrorHandler = function(name, errtype, cb) {
       var func = function(event) {
         var err = 'unexpected call to "' + name + '.' + errtype + '"';
-        if ( event && event.target && event.target.error )
+        if ( event && event.target && event.target.error ) {
           err += ': ' + event.target.error;
+        }
         expect(err).toBeNull();
         return cb(err);
       };
@@ -227,8 +230,9 @@ define([
     it('implements CRUD for a simple record', function(done) {
       createTestDb(function(err, db) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -248,8 +252,8 @@ define([
                 // console.log('second fetched data: ' + j(event.target.result));
                 expect(event.target.result.value).toEqual('foo2');
                 // try delete
-                db.transaction(null, 'readwrite').objectStore('data')
-                  .delete('1').onsuccess = function(event) {
+                db.transaction(null, 'readwrite')
+                  .objectStore('data')['delete']('1').onsuccess = function(event) {
                     // console.log('deleted data');
                     // confirm delete
                     db.transaction().objectStore('data').get('1').onsuccess = function(event) {
@@ -271,7 +275,7 @@ define([
         if ( cursor )
         {
           data.push(cursor.value);
-          return cursor.continue();
+          return cursor['continue']();
         }
         return cb(null, data);
       };
@@ -281,8 +285,9 @@ define([
     it('implements `Store.clear`', function(done) {
       createTestDb(function(err, db) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -292,8 +297,9 @@ define([
         var store = db.transaction().objectStore('data');
         getAllData(store, function(err, data) {
           expect(err).toBeFalsy();
-          if ( err )
+          if ( err ) {
             return done();
+          }
           var chk = [
             {id: '1', value: 'foo1', count: 3},
             {id: 2, value: 'zapper', count: 23},
@@ -303,8 +309,9 @@ define([
           store.clear().onsuccess = function(event) {
             getAllData(store, function(err, data) {
               expect(err).toBeFalsy();
-              if ( err )
+              if ( err ) {
                 return done();
+              }
               expect(data).toEqual([]);
               done();
             });
@@ -315,10 +322,11 @@ define([
 
     //-------------------------------------------------------------------------
     it('implements `Store.count`', function(done) {
-      createTestDb(function(err, db, scope) {
+      createTestDb(function(err, db/*, scope*/) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -346,8 +354,9 @@ define([
     it('implements `Index.count`', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -375,8 +384,9 @@ define([
     it('returns undefined for keys that don\'t exist', function(done) {
       createTestDb(function(err, db) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -398,8 +408,9 @@ define([
     it('supports index-based access to key/data', function(done) {
       createTestDb(function(err, db) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -422,8 +433,9 @@ define([
     it('supports cursor-based access to key/data', function(done) {
       createTestDb(function(err, db) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -436,9 +448,9 @@ define([
           if ( cursor )
           {
             dataset.push(cursor.value.id + ':' + cursor.value.value);
-            return cursor.continue();
+            return cursor['continue']();
           }
-          dataset.sort()
+          dataset.sort();
           expect(dataset).toEqual(['1:foo1', '2:zapper', '3:zapper']);
           dataset = [];
           db.transaction().objectStore('data').index('value').openCursor('zapper')
@@ -447,9 +459,9 @@ define([
               if ( cursor )
               {
                 dataset.push(cursor.value.id + ':' + cursor.value.value);
-                return cursor.continue();
+                return cursor['continue']();
               }
-              dataset.sort()
+              dataset.sort();
               expect(dataset).toEqual(['2:zapper', '3:zapper']);
               done();
             };
@@ -461,8 +473,9 @@ define([
     it('supports IDBKeyRange.only() operation', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -477,9 +490,9 @@ define([
             if ( cursor )
             {
               dataset.push(cursor.value.id + ':' + cursor.value.value);
-              return cursor.continue();
+              return cursor['continue']();
             }
-            dataset.sort()
+            dataset.sort();
             expect(dataset).toEqual(['2:zapper', '3:zapper']);
             done();
           };
@@ -490,8 +503,9 @@ define([
     it('supports IDBKeyRange.bound() (closed) operation', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -506,9 +520,9 @@ define([
             if ( cursor )
             {
               dataset.push(cursor.value.id + ':' + cursor.value.value);
-              return cursor.continue();
+              return cursor['continue']();
             }
-            dataset.sort()
+            dataset.sort();
             expect(dataset).toEqual(['1:foo1', '3:zapper']);
             done();
           };
@@ -519,8 +533,9 @@ define([
     it('supports IDBKeyRange.bound() (lower-open) operation', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -535,9 +550,9 @@ define([
             if ( cursor )
             {
               dataset.push(cursor.value.id + ':' + cursor.value.value);
-              return cursor.continue();
+              return cursor['continue']();
             }
-            dataset.sort()
+            dataset.sort();
             expect(dataset).toEqual(['3:zapper']);
             done();
           };
@@ -548,8 +563,9 @@ define([
     it('supports IDBKeyRange.bound() (upper-open) operation', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -564,9 +580,9 @@ define([
             if ( cursor )
             {
               dataset.push(cursor.value.id + ':' + cursor.value.value);
-              return cursor.continue();
+              return cursor['continue']();
             }
-            dataset.sort()
+            dataset.sort();
             expect(dataset).toEqual(['1:foo1']);
             done();
           };
@@ -577,8 +593,9 @@ define([
     it('supports IDBKeyRange.bound() (open) operation', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         db.onerror = function(event) {
           // don't expect any errors to bubble up
           expect('db.onerror').toBe('never called');
@@ -593,9 +610,9 @@ define([
             if ( cursor )
             {
               dataset.push(cursor.value.id + ':' + cursor.value.value);
-              return cursor.continue();
+              return cursor['continue']();
             }
-            dataset.sort()
+            dataset.sort();
             expect(dataset).toEqual([]);
             done();
           };
@@ -606,8 +623,9 @@ define([
     it('maintains the `Database.objectStoreNames` attribute', function(done) {
       createTestDb(function(err, db, scope) {
         expect(err).toBeFalsy();
-        if ( err )
+        if ( err ) {
           return done();
+        }
         expect(db.version).toEqual(1);
         expect(db.objectStoreNames).toEqual(['data', 'longdata']);
         db.close();
@@ -645,12 +663,11 @@ define([
       // example from README.md instead of needing to duplicate it here...
 
       var output = '';
-      var _console = console;
       var console = {
         log: function(msg) {
           output += msg + '\n';
         }
-      }
+      };
       var final_check = function() {
         expect(output).toEqual(
           'record: {"id":1,"value":"my-first-item"}\n'
@@ -693,6 +710,25 @@ request.run = function() {
     console.log('DATABASE ERROR: ' + event.target.error);
   };
 
+  var play_with_the_index_and_cursors = function() {
+
+    var index = db.transaction(null, 'readwrite').objectStore('data').index('value');
+    var range = scope.IDBKeyRange.only('another object');
+
+    console.log('all objects with the "value" field set to "another object":');
+
+    index.openCursor(range).onsuccess = function(event) {
+      var cursor = event.target.result;
+      if ( ! cursor ) {
+        return final_check();
+      }
+
+      console.log('  - ' + JSON.stringify(cursor.value));
+      cursor['continue']();
+    };
+
+  };
+
   // fetch the record with id "1" in store "data"
   var store = db.transaction(null, 'readwrite').objectStore('data');
   store.get('1').onsuccess = function(event) {
@@ -700,7 +736,7 @@ request.run = function() {
     console.log('record: ' + JSON.stringify(obj));
 
     // now delete it
-    store.delete('1').onsuccess = function(event) {
+    store['delete']('1').onsuccess = function(event) {
       console.log('deleted the record');
 
       // and now add a couple new records (overwriting it if the key
@@ -716,24 +752,6 @@ request.run = function() {
         };
       };
     };
-  };
-
-  var play_with_the_index_and_cursors = function() {
-
-    var index = db.transaction(null, 'readwrite').objectStore('data').index('value');
-    var range = scope.IDBKeyRange.only('another object');
-
-    console.log('all objects with the "value" field set to "another object":');
-
-    index.openCursor(range).onsuccess = function(event) {
-      var cursor = event.target.result;
-      if ( ! cursor )
-        return final_check();
-
-      console.log('  - ' + JSON.stringify(cursor.value));
-      cursor.continue();
-    };
-
   };
 
 };
