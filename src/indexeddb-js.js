@@ -19,9 +19,10 @@
 // for node compatibility...
 if ( typeof define !== 'function' ) {
   var define = require('amdefine')(module);
+  Object.assign = require('object.assign');
 }
 
-define(['underscore'], function(_) { 'use strict';
+define(function() { 'use strict';
 
   var exports = {};
 
@@ -30,7 +31,7 @@ define(['underscore'], function(_) { 'use strict';
   var uj     = function(str) { return JSON.parse(str); };
   var defer  = function(cb, object) {
     if ( object != undefined ) {
-      cb = _.bind(cb, object);
+      cb = cb.bind(object);
     }
     if ( process === undefined ) {
       setTimeout(cb, 0);
@@ -72,13 +73,13 @@ define(['underscore'], function(_) { 'use strict';
   var Request = function() {
     this._error = function(next, code, message) {
       this.error = '[' + code + '] ' + message;
-      var err = new Event(_.extend(this, {error: this.error, errorCode: code}));
+      var err = new Event(Object.assign(this, {error: this.error, errorCode: code}));
       // console.log('ERROR: indexedDB.Request: ' + err.target.error);
       this._errpub(next, err);
     };
     this._errevt = function(next, err) {
       this.error = err;
-      err = new Event(_.extend(this, {error: this.error, errorCode: this.error.code}));
+      err = new Event(Object.assign(this, {error: this.error, errorCode: this.error.code}));
       // console.log('ERROR: indexedDB.Request: ' + err.target.error);
       this._errpub(next, err);
     };
@@ -330,7 +331,7 @@ define(['underscore'], function(_) { 'use strict';
           return request._error(this, 'indexeddb.Index.iGA.10',
                                 'failed to fetch objects by index: ' + err);
         }
-        var index = _.find(store._meta.index, function(e) { return e.name == self._name; });
+        var index = store._meta.index.find(function(e) { return e.name == self._name; });
         if ( index == undefined ) {
           return request._error(this, 'indexeddb.Index.iGA.20',
                             'no such index name in object store');
@@ -338,7 +339,7 @@ define(['underscore'], function(_) { 'use strict';
         if ( ! range ) {
           return cb.call(object, null, objects);
         }
-        cb.call(object, null, _.filter(objects, function(e) {
+        cb.call(object, null, objects && objects.filter(function(e) {
           return range.check(store._extractValue(e.value, index.keyPath));
         }));
       });
@@ -419,7 +420,7 @@ define(['underscore'], function(_) { 'use strict';
           sdb.all(
             'SELECT c_meta FROM "idb.store" WHERE c_dbname = ? AND c_name = ?',
             this._txn._db.name, this.name,
-            _.bind(function(err, rows) {
+            function(err, rows) {
               if ( err ) {
                 return request._error(this, 'indexeddb.Store.iWI.10', err);
               }
@@ -434,7 +435,7 @@ define(['underscore'], function(_) { 'use strict';
               }
               this._meta = uj(rows[0].c_meta);
               return cb.call(object, null, sdb);
-            }, this)
+            }.bind(this)
           );
         }, this);
         return;
@@ -443,7 +444,7 @@ define(['underscore'], function(_) { 'use strict';
         if ( err ) {
           return cb.call(object, err);
         }
-        var doInsert = _.bind(function() {
+        var doInsert = function() {
           sdb.run(
             'INSERT OR REPLACE INTO "idb.store" (c_dbname, c_name, c_meta)'
               + ' VALUES ( ?, ?, ? )',
@@ -453,7 +454,7 @@ define(['underscore'], function(_) { 'use strict';
               return cb.call(object, null, sdb);
             });
           return;
-        }, this);
+        }.bind(this);
         if ( this._meta.table != undefined ) {
           return doInsert();
         }
@@ -479,8 +480,8 @@ define(['underscore'], function(_) { 'use strict';
     //-------------------------------------------------------------------------
     this._extractValue = function(object, path) {
       var walker = function(object, path) {
-        if ( _.isArray(path) ) {
-          return _.map(path, function(e) { return walker(object, e); }).join('');
+        if ( Array.isArray(path) ) {
+          return path.map(function(e) { return walker(object, e); }).join('');
         }
         var idx = path.indexOf('.');
         if ( idx === -1 ) {
@@ -502,7 +503,7 @@ define(['underscore'], function(_) { 'use strict';
         sdb.run(
           'INSERT INTO "' + this._meta.table + '" (c_key, c_value) VALUES ( ?, ? )',
           this._extractValue(object), j(object),
-          _.bind(function(err) {
+          function(err) {
             if ( err ) {
               return req._error(this, 'indexeddb.Store.A.20',
                                 'failed to add object: ' + err);
@@ -510,7 +511,7 @@ define(['underscore'], function(_) { 'use strict';
             if ( req.onsuccess ) {
               req.onsuccess(new Event(req));
             }
-          }, this)
+          }.bind(this)
         );
       }, this);
       return req;
@@ -527,7 +528,7 @@ define(['underscore'], function(_) { 'use strict';
         sdb.all(
           'SELECT c_value FROM "' + this._meta.table + '" WHERE c_key = ?',
           objectID,
-          _.bind(function(err, rows) {
+          function(err, rows) {
             if ( err ) {
               return req._error(this, 'indexeddb.Store.G.20',
                                 'failed to fetch object: ' + err);
@@ -540,7 +541,7 @@ define(['underscore'], function(_) { 'use strict';
             if ( req.onsuccess ) {
               req.onsuccess(new Event(req));
             }
-          }, this)
+          }.bind(this)
         );
       }, this);
       return req;
@@ -614,7 +615,7 @@ define(['underscore'], function(_) { 'use strict';
         }
         sdb.run(
           'DELETE FROM "' + this._meta.table + '"',
-          _.bind(function(err) {
+          function(err) {
             if ( err ) {
               return req._error(this, 'indexeddb.Store.C.20',
                                 'failed to clear object store: ' + err);
@@ -622,7 +623,7 @@ define(['underscore'], function(_) { 'use strict';
             if ( req.onsuccess ) {
               req.onsuccess(new Event(req));
             }
-          }, this)
+          }.bind(this)
         );
       }, this);
       return req;
@@ -663,16 +664,16 @@ define(['underscore'], function(_) { 'use strict';
         }
         sdb.all(
           'SELECT c_key, c_value FROM "' + this._meta.table + '"',
-          _.bind(function(err, rows) {
+          function(err, rows) {
             if ( err ) {
               return cb.call(object,
                              {code: 'indexeddb.Store.iGA.30',
                               message: 'failed to fetch objects: ' + err});
             }
-            cb.call(object, null, _.map(rows, function(e) {
+            cb.call(object, null, rows.map(function(e) {
               return {key: e.c_key, value: uj(e.c_value)};
             }));
-          }, this)
+          }.bind(this)
         );
       }, this);
     };
@@ -717,7 +718,7 @@ define(['underscore'], function(_) { 'use strict';
 
     // -- private attributes
     this._db             = db;
-    this._stores         = stores ? ( _.isArray(stores) ? stores : [stores] ) : [];
+    this._stores         = stores ? ( Array.isArray(stores) ? stores : [stores] ) : [];
     this._preventDefault = false;
     this._error          = function(event) {
       // console.log('ERROR: indexedDB.Transaction[' + this.db.name + ']: ' + event.target.error);
@@ -732,7 +733,7 @@ define(['underscore'], function(_) { 'use strict';
     //-------------------------------------------------------------------------
     this.objectStore = function(name) {
       // todo: check that this store already exists (or that this is a versionchange)
-      if ( this._stores.length > 0 && _.indexOf(this._stores, name) === -1 ) {
+      if ( this._stores.length > 0 && this._stores.indexOf(name) === -1 ) {
         return (new Request())._error(
           this,
           'indexeddb.Transaction.OS.10',
@@ -817,7 +818,7 @@ define(['underscore'], function(_) { 'use strict';
                       'could not select store names from database: ' + err);
                   }
 
-                  self.objectStoreNames = _.map(stores, function(record) {
+                  self.objectStoreNames = stores.map(function(record) {
                     return record.c_name;
                   });
                   self.objectStoreNames.sort();
@@ -920,7 +921,7 @@ define(['underscore'], function(_) { 'use strict';
                       'could not remove table "' + self.name + '.'
                         + next[1] + '": ' + err);
                   }
-                  self.objectStoreNames = _.filter(self.objectStoreNames, function(name) {
+                  self.objectStoreNames = self.objectStoreNames.filter(function(name) {
                     return name != next[1];
                   });
                   // todo: DRY! (this should be loaded from the database...)
@@ -982,7 +983,7 @@ define(['underscore'], function(_) { 'use strict';
           errorCode: 'indexeddb.Database.DOS.10'
         });
       }
-      if ( ! _.contains(this.objectStoreNames, name) ) {
+      if ( this.objectStoreNames.indexOf(name) === -1 ) {
         throw new exports.NotFoundError(
           'indexeddb.Database.DOS.11',
           'no such table "' + this.name + '.' + name + '"');
@@ -1037,7 +1038,7 @@ define(['underscore'], function(_) { 'use strict';
 
     //-------------------------------------------------------------------------
     this.open = function(name, version) {
-      var request = _.extend(new Request(), {
+      var request = Object.assign(new Request(), {
         onversionchange: null,
         onupgradeneeded: null,
         onblocked:       null,
@@ -1050,70 +1051,71 @@ define(['underscore'], function(_) { 'use strict';
     };
 
     this.deleteDatabase = function(name) {
-	      var request = _.extend(new Request(), {
-          onversionchange: null,
-          onupgradeneeded: null,
-          onblocked:       null,
-          onerror:         null,
-          onsuccess:       null,
-          result:          null
-        });
-        var sdb = this._driver;
-              sdb.all(
-                'SELECT c_meta FROM "idb.store" WHERE c_dbname = ?',
-                name,
-                function(err, rows) {
-                  if ( err ) {
-                    return request._error(
-                      null, 'indexeddb.Database.dD.10',
-                      'could not remove table "' + name + '.'
-                        + '": ' + err);
-                  }
-                  sdb.serialize(function() {
-                    function makeRemoveDatatableErrorReporter (datatable) {
-                      return function(err) {
-                        if ( err ) {
-                          return request._error(
-                            null, 'indexeddb.Database.dD.11',
-                            'could not remove data for "' + datatable + '.'
-                              + '": ' + err);
-                        }
-                      };
-                    }
-                    var i;
-                    for(i=0; i<rows.length; i++) {
-                      var datatable = JSON.parse(rows[i].c_meta).table; 
-                      sdb.run(
-                        'DROP TABLE "' + datatable + '"',
-                        makeRemoveDatatableErrorReporter(datatable));
-                    }
-                    sdb.run(
-                      'DELETE FROM "idb.store" WHERE c_dbname = ?',
-                      name,
-                      function(err) {
-                        if ( err ) {
-                          return request._error(
-                            null, 'indexeddb.Database.dD.12',
-                            'could not remove data for "' + name + '.'
-                              + '": ' + err);
-                        }
-                    }); 
-                    sdb.run(
-                      'DELETE FROM "idb.database" WHERE c_name = ?',
-                      name,
-                      function(err) {
-                        if ( err ) {
-                          return request._error(
-                            null, 'indexeddb.Database.dD.13',
-                            'could not remove data for "' + name + '.'
-                              + '": ' + err);
-                        }
-                        if ( request.onsuccess ) {
-                          request.onsuccess({target: {error: false, errorCode: false}});
-                        }
-                    }); 
-                  });
-                });
+	  var request = Object.assign(new Request(), {
+        onversionchange: null,
+        onupgradeneeded: null,
+        onblocked:       null,
+        onerror:         null,
+        onsuccess:       null,
+        result:          null
+      });
+      var sdb = this._driver;
+      sdb.all(
+        'SELECT c_meta FROM "idb.store" WHERE c_dbname = ?',
+        name,
+        function(err, rows) {
+          if ( err ) {
+            return request._error(
+              null, 'indexeddb.Database.dD.10',
+              'could not remove table "' + name + '.'
+                + '": ' + err);
+          }
+          sdb.serialize(function() {
+            function makeRemoveDatatableErrorReporter (datatable) {
+              return function(err) {
+                if ( err ) {
+                  return request._error(
+                    null, 'indexeddb.Database.dD.11',
+                    'could not remove data for "' + datatable + '.'
+                      + '": ' + err);
+                }
+              };
+            }
+            var i;
+            for(i=0; i<rows.length; i++) {
+              var datatable = JSON.parse(rows[i].c_meta).table;
+              sdb.run(
+                'DROP TABLE "' + datatable + '"',
+                makeRemoveDatatableErrorReporter(datatable));
+            }
+            sdb.run(
+              'DELETE FROM "idb.store" WHERE c_dbname = ?',
+              name,
+              function(err) {
+                if ( err ) {
+                  return request._error(
+                    null, 'indexeddb.Database.dD.12',
+                    'could not remove data for "' + name + '.'
+                      + '": ' + err);
+                }
+            });
+            sdb.run(
+              'DELETE FROM "idb.database" WHERE c_name = ?',
+              name,
+              function(err) {
+                if ( err ) {
+                  return request._error(
+                    null, 'indexeddb.Database.dD.13',
+                    'could not remove data for "' + name + '.'
+                      + '": ' + err);
+                }
+                if ( request.onsuccess ) {
+                  request.onsuccess({target: {error: false, errorCode: false}});
+                }
+            });
+          });
+        }
+      );
       return request;
     };
     // todo: implement:

@@ -17,12 +17,13 @@
     "url": "https://github.com/metagriffin/indexeddb-js/issues"
   },
   "dependencies": {
-    "amdefine":     ">=0.0.4",
-    "sqlite3":      ">=2.1.1",
-    "underscore":   ">=1.4.2"
+    "amdefine":      ">=0.0.4",
+    "sqlite3":       ">=2.1.1",
+    "object.assign": ">=4.0.1"
   },
   "devDependencies": {
-    "jasmine-node": ">=1.0.26"
+    "jasmine-node": ">=1.0.26",
+    "underscore":   ">=1.4.2"
   },
   "keywords": [
     "indexeddb",
