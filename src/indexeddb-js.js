@@ -111,10 +111,16 @@ define(['underscore'], function(_) {'use strict';
 
   //   UnknownError
   //   ConstraintError
-  //   DataError
   //   TransactionInactiveError
   //   ReadOnlyError
   // these should already be pre-defined somewhere...
+  exports.DataError = function() {
+    this.name = 'DataError';
+    this.message = 'Provided data is inadequate.';
+  };
+  exports.DataError.prototype.toString = errorStringifier;
+
+  // Todo: Avoid "code" as this is deprecated
   exports.NotFoundError = function(code, message) {
     this.name = 'NotFoundError';
     this.code = code;
@@ -1035,8 +1041,29 @@ define(['underscore'], function(_) {'use strict';
         });
       return request;
     };
-    // todo: implement:
-    // this.cmp = function(first, second) {};
+
+    this.cmp = function(first, second) {
+      var sdb = this._driver;
+      var table = 'idb:' + safeName(this._txn._db.name)
+        + '.' + safeName(this.name);
+      sdb.all(
+        'SELECT c_value FROM "' + table + '" WHERE c_key = ?',
+        objectID,
+        _.bind(function(err, rows) {
+          if ( err )
+            return req._error(null, 'indexeddb.Store.G.20',
+                              'failed to fetch object: ' + err);
+          if ( rows.length > 1 )
+            return req._error(null, 'indexeddb.Store.G.40',
+                              'internal error: multiple records for key');
+          req.result = rows.length > 0 ? uj(rows[0].c_value) : undefined;
+          if ( req.onsuccess )
+            req.onsuccess(new Event(req));
+        }, this)
+      );
+      new Index(store).getKey(first);
+      throw new exports.DataError();
+    };
 
     return this;
   };
